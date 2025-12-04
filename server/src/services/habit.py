@@ -11,6 +11,7 @@ from fastapi import HTTPException, status
 class HabitService:
     def __init__(self, session: Session):
         self.repository = HabitRepository(session)
+        self.hl_service = HabitLogService(session)
     
     def create_habit(self, habit_data: HabitCreate) -> Habit:
         habit = Habit(**habit_data.model_dump())
@@ -76,6 +77,8 @@ class HabitLogService:
     
     def update_log(self, log_id: UUID, log_data: HabitLogUpdate) -> HabitLog:
         log = self.get_log(log_id)
+        if log_data.progress_value == 100:
+            log_data.status = 'completed'
         return self.repository.update(log, log_data.model_dump(exclude_unset=True))
     
     def delete_log(self, log_id: UUID) -> None:

@@ -1,8 +1,16 @@
 from datetime import datetime
 from typing import Optional
 from uuid import UUID
-from pydantic import BaseModel, EmailStr, ConfigDict
+from pydantic import BaseModel, EmailStr, ConfigDict, Field
 
+
+class Token(BaseModel):
+    access_token: str
+    token_type: str = Field(default="Bearer")
+
+class TokenData(BaseModel):
+    username: str = Field(min_length=5, max_length=20)
+    email: EmailStr
 
 class UserCreate(BaseModel):
     first_name: str

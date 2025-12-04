@@ -1,16 +1,37 @@
 from typing import Optional, List
 from uuid import UUID
+import jwt
 from sqlmodel import Session
+from datetime import timedelta
 from src.models.user import User, UserProfile
-from src.schemas.user import UserCreate, UserUpdate, UserProfileCreate, UserProfileUpdate
+from src.schemas.user import UserCreate, UserUpdate, UserProfileCreate, UserProfileUpdate, TokenData, Token
 from src.repositories.user import UserRepository, UserProfileRepository
-from fastapi import HTTPException, status
-from src.core.security import verify_password
+from fastapi import Depends, HTTPException, status
+from src.core.security import verify_password, create_access_token, ALGORITHM
+from src.core.config import CONFIG
+from src.exceptions import ServerError, UnauthorizedError
+
 
 class UserService:
     def __init__(self, session: Session):
         self.repository = UserRepository(session)
 
+    def get_account(self, token: str) -> User:
+        try:
+            payload = jwt.decode(token, CONFIG.SECRET_KEY, algorithms=[ALGORITHM])
+            username = payload.get("username")
+            if username is None:
+                raise UnauthorizedError()
+            account = self.repository.get_by_username(username)
+            if account is None:
+                raise UnauthorizedError()
+            return account
+        except jwt.InvalidTokenError as e:
+            raise UnauthorizedError() from e
+        except jwt.ExpiredSignatureError as e:
+            raise UnauthorizedError() from e
+        except Exception as e:
+            raise ServerError() from e
 
     def login(self, email: str, password: str):
         user = self.repository.get_by_email(email)
@@ -24,7 +45,9 @@ class UserService:
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="Credenciales incorrectas"
             )
-        return user
+        token_data = TokenData(email=user.email, username=user.username)
+        token = create_access_token(token_data, timedelta(days=1.0))
+        return Token(access_token=token)
     
     def create_user(self, user_data: UserCreate) -> User:
         existing_user = self.repository.get_by_email(user_data.email)
@@ -52,6 +75,7 @@ class UserService:
                 detail="User not found"
             )
         return user
+    
     
     def get_all_users(self, skip: int = 0, limit: int = 100) -> List[User]:
         return self.repository.get_all(skip=skip, limit=limit)

@@ -1,5 +1,4 @@
-from fastapi import FastAPI, Request, APIRouter
-from fastapi.responses import JSONResponse
+from fastapi import FastAPI, APIRouter
 from fastapi.middleware.cors import CORSMiddleware
 from src.core.database import create_db_and_tables
 from src.core.config import CONFIG
@@ -8,7 +7,7 @@ from src.routes import user_router, habit_router, challenge_router, auth_router
 
 def create_app(info: dict[str, str]) -> FastAPI:
     app = FastAPI(
-        title=info.get("title", "Habit Tracker API"),
+        title=info.get("title", "HabitFlow API"),
         summary=info.get("summary", "Track your habits and join challenges"),
         description=info.get("description", "A comprehensive API for habit tracking")
     )
@@ -17,7 +16,7 @@ def create_app(info: dict[str, str]) -> FastAPI:
 
     app.add_middleware(
         CORSMiddleware,
-        allow_origins=[CONFIG.CLIENT_URL] if CONFIG.CLIENT_URL != "*" else ["*"],  
+        allow_origins=[CONFIG.CLIENT_URL],  
         allow_credentials=True,
         allow_methods=["*"],  
         allow_headers=["*"],  

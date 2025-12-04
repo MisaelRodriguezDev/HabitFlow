@@ -17,7 +17,7 @@ class Habit(Base, table=True):
     goal_value: int
     
     user: Optional["User"] = Relationship(back_populates="habits")
-    habit_logs: List["HabitLog"] = Relationship(back_populates="habit")
+    habit_logs: List["HabitLog"] = Relationship(back_populates="habit", sa_relationship_kwargs={"cascade": "all, delete-orphan"})
     challenge_habits: List["ChallengeHabit"] = Relationship(back_populates="habit")
 
 

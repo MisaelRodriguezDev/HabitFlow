@@ -1,6 +1,6 @@
 from typing import List
 from uuid import UUID
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends, HTTPException, Header, status
 from sqlmodel import Session
 from src.core.database import get_session
 from src.schemas.user import (
@@ -23,6 +23,23 @@ def get_users(skip: int = 0, limit: int = 100, session: Session = Depends(get_se
     service = UserService(session)
     return service.get_all_users(skip=skip, limit=limit)
 
+@router.get("/me")
+def get_my_account(
+    session: Session = Depends(get_session),
+    authorization: str | None = Header(default=None)
+):
+    """
+    Obtiene la cuenta del usuario a partir del token enviado en el header:
+    Authorization: Bearer <token>
+    """
+    print("header", authorization)
+    if authorization is None or not authorization.startswith("Bearer "):
+        raise HTTPException(status_code=401, detail="Missing or invalid token")
+
+    token = authorization.split(" ")[1]  # extraer el token real
+
+    service = UserService(session)
+    return service.get_account(token)
 
 @router.get("/{user_id}", response_model=UserRead)
 def get_user(user_id: UUID, session: Session = Depends(get_session)):

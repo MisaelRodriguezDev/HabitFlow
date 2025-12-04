@@ -3,6 +3,7 @@ import jwt
 import bcrypt
 from cryptography.fernet import Fernet
 from src.core.config import CONFIG
+from src.schemas.user import TokenData
 
 ALGORITHM = "HS256"
 
@@ -56,3 +57,19 @@ def decrypt_data(encrypted_data: str) -> str:
          str: Texto desencriptado
      """
      return cipher.decrypt(encrypted_data.encode()).decode()
+
+def create_access_token(data: TokenData, expires_delta: timedelta) -> str:
+     """Método para crear el token jwt para el usuario
+
+     Args:
+         data (TokenData): Información sobre el usuario que será almacenada como metadatos
+         expires_delta (timedelta): Tiempo de duración del token (24h por defecto)
+
+     Returns:
+         str: Token de autenticación y autorización del usuario
+     """
+     to_encode = data.model_dump()
+     expire = datetime.now(timezone.utc) + expires_delta
+     to_encode.update({"exp": expire})
+     encoded_jwt = jwt.encode(to_encode, CONFIG.SECRET_KEY, algorithm=ALGORITHM)
+     return encoded_jwt
